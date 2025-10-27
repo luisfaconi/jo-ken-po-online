@@ -28,33 +28,20 @@
     </transition>
 
     <transition name="fade">
-      <div
-        v-if="state.matchSummary"
-        class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 px-4"
-      >
-        <div class="match-card max-w-md rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-2xl">
-          <h2
-            class="text-sm font-semibold uppercase tracking-[0.4em]"
-            :class="state.matchSummary.you.didWin ? 'text-green-600' : 'text-rose-600'"
-          >
-            {{ state.matchSummary.you.didWin ? 'Vitoria!' : 'Derrota' }}
-          </h2>
-          <p class="mt-3 text-sm text-slate-600">
-            Placar final: Voce {{ state.matchSummary.you.score }} x
-            {{ state.matchSummary.opponent?.score ?? 0 }} Oponente
-          </p>
-          <p class="mt-1 text-xs text-slate-500">
-            Melhor de {{ state.matchSummary.bestOf }} - retornando ao saguao em instantes...
-          </p>
-          <button
-            type="button"
-            class="mt-5 rounded-full bg-blue-500 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-white shadow-lg transition hover:bg-blue-600"
-            @click="acknowledgeMatch"
-          >
-            Voltar agora
-          </button>
-        </div>
-      </div>
+      <RoundResultModal
+        v-if="state.roundModal"
+        :summary="state.roundModal"
+        :points-to-win="state.pointsToWin"
+        @close="acknowledgeRound"
+      />
+    </transition>
+
+    <transition name="fade">
+      <MatchSummaryModal
+        v-if="state.matchSummary && !state.roundModal"
+        :summary="state.matchSummary"
+        @close="acknowledgeMatch"
+      />
     </transition>
   </div>
 </template>
@@ -63,6 +50,8 @@
 import { computed } from 'vue';
 import LobbyView from './components/LobbyView.vue';
 import GameView from './components/GameView.vue';
+import MatchSummaryModal from './components/MatchSummaryModal.vue';
+import RoundResultModal from './components/RoundResultModal.vue';
 import { useGame } from './composables/useGame';
 import type { ChoiceKey } from './composables/useGame';
 
@@ -71,6 +60,7 @@ const {
   joinQueue,
   cancelQueue,
   submitChoice,
+  acknowledgeRound,
   acknowledgeMatch,
   resetAfterOpponentLeft
 } = useGame();
@@ -129,7 +119,7 @@ const infoText = computed((): string => {
 
 const canJoin = computed(() => state.status === 'idle' || state.status === 'opponent-left');
 const canCancel = computed(() => state.status === 'queue');
-const canPlay = computed(() => state.status === 'matched');
+const canPlay = computed(() => state.status === 'matched' && !state.roundModal);
 
 const joinLabel = computed(() =>
   state.status === 'opponent-left' ? 'Buscar nova partida' : 'Entrar na fila'
@@ -180,22 +170,4 @@ function translateChoice(choice?: ChoiceKey | null): string {
   opacity: 0;
 }
 
-.match-card {
-  animation: pop-in 0.35s ease;
-}
-
-@keyframes pop-in {
-  0% {
-    opacity: 0;
-    transform: scale(0.85) translateY(20px);
-  }
-  60% {
-    opacity: 1;
-    transform: scale(1.03) translateY(-6px);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
 </style>

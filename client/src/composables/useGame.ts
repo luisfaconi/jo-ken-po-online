@@ -48,6 +48,7 @@ export interface GameState {
   };
   pendingChoice: ChoiceKey | null;
   lastRound: RoundSummary | null;
+  roundModal: RoundSummary | null;
   error: string | null;
   matchSummary: MatchSummary | null;
 }
@@ -62,6 +63,7 @@ const defaultState: GameState = {
   score: { you: 0, opponent: 0 },
   pendingChoice: null,
   lastRound: null,
+  roundModal: null,
   error: null,
   matchSummary: null
 };
@@ -83,6 +85,7 @@ export function useGame() {
     joinQueue,
     cancelQueue,
     submitChoice,
+    acknowledgeRound,
     acknowledgeMatch,
     resetAfterOpponentLeft
   };
@@ -130,6 +133,7 @@ function connect() {
       status: 'queue',
       pendingChoice: null,
       lastRound: null,
+      roundModal: null,
       matchSummary: null
     });
   });
@@ -145,6 +149,7 @@ function connect() {
       opponentId: opponent?.id,
       pendingChoice: null,
       lastRound: null,
+      roundModal: null,
       matchSummary: null,
       score: { you: 0, opponent: 0 }
     });
@@ -179,6 +184,7 @@ function connect() {
         opponent: payload.opponent.score
       },
       lastRound: payload,
+      roundModal: payload,
       roomId: payload.roomId
     });
   });
@@ -197,7 +203,8 @@ function connect() {
       status: 'opponent-left',
       opponentId: undefined,
       matchSummary: null,
-      pendingChoice: null
+      pendingChoice: null,
+      roundModal: null
     });
   });
 
@@ -253,6 +260,10 @@ function submitChoice(choice: ChoiceKey) {
   patchState({ pendingChoice: choice });
 }
 
+function acknowledgeRound() {
+  patchState({ roundModal: null });
+}
+
 function acknowledgeMatch() {
   setError(null);
   patchState({
@@ -261,6 +272,7 @@ function acknowledgeMatch() {
     roomId: undefined,
     pendingChoice: null,
     lastRound: null,
+    roundModal: null,
     matchSummary: null,
     score: { you: 0, opponent: 0 }
   });
@@ -274,6 +286,7 @@ function resetAfterOpponentLeft() {
     roomId: undefined,
     pendingChoice: null,
     lastRound: null,
+    roundModal: null,
     matchSummary: null,
     score: { you: 0, opponent: 0 }
   });
@@ -289,6 +302,7 @@ function patchState(partial: Partial<GameState>) {
     pendingChoice:
       partial.pendingChoice === undefined ? state.pendingChoice : partial.pendingChoice,
     lastRound: partial.lastRound === undefined ? state.lastRound : partial.lastRound,
+    roundModal: partial.roundModal === undefined ? state.roundModal : partial.roundModal,
     error: partial.error === undefined ? state.error : partial.error,
     matchSummary:
       partial.matchSummary === undefined ? state.matchSummary : partial.matchSummary
