@@ -3,7 +3,10 @@
     <div class="lobby__orb lobby__orb--one"></div>
     <div class="lobby__orb lobby__orb--two"></div>
 
-    <section class="lobby-card">
+    <section
+      class="lobby-card"
+      :class="{ 'lobby-card--dim': ['queue', 'opponent-left'].includes(state.status) }"
+    >
       <div class="lobby-card__head">
         <span class="lobby-badge">Hall principal</span>
         <h1>Pronto para o proximo duelo?</h1>
@@ -32,7 +35,67 @@
       </div>
     </section>
 
-    <section class="lobby-grid">
+    <transition name="queue">
+      <div v-if="state.status === 'queue'" class="queue-overlay">
+        <div class="queue-panel">
+          <div class="queue-spinner">
+            <span class="queue-spinner__dot queue-spinner__dot--one"></span>
+            <span class="queue-spinner__dot queue-spinner__dot--two"></span>
+            <span class="queue-spinner__dot queue-spinner__dot--three"></span>
+          </div>
+          <p class="queue-eyebrow">Buscando adversario</p>
+          <h2>Aguente firme! Estamos encontrando a melhor mesa.</h2>
+          <p class="queue-note">
+            Jogadores na fila: <strong>{{ state.queueSize }}</strong>. Assim que um oponente aceitar o desafio,
+            voce sera direcionado automaticamente para a arena.
+          </p>
+          <div class="queue-tips">
+            <p>Enquanto isso:</p>
+            <ul>
+              <li>Verifique se sua conexao esta estavel.</li>
+              <li>Recapitule rapidamente sua estrategia favorita.</li>
+              <li>Se preferir, cancele e retorne mais tarde.</li>
+            </ul>
+          </div>
+          <button type="button" class="queue-cancel" @click="$emit('cancel')">Cancelar busca</button>
+        </div>
+      </div>
+    </transition>
+
+    <transition name="opponent">
+      <div v-if="state.status === 'opponent-left'" class="opponent-overlay">
+        <div class="opponent-panel">
+          <div class="opponent-icon">
+            <span class="opponent-icon__wave"></span>
+            <span class="opponent-icon__wave opponent-icon__wave--delay"></span>
+            <span class="opponent-icon__avatar">?</span>
+          </div>
+          <p class="opponent-eyebrow">Oponente desconectado</p>
+          <h2>Seu adversario saiu da partida.</h2>
+          <p class="opponent-note">
+            A sala foi encerrada para evitar que voce fique preso esperando. Nenhum ponto foi perdido e
+            voce pode voltar para a fila quando quiser.
+          </p>
+          <div class="opponent-actions">
+            <button type="button" class="opponent-button opponent-button--primary" @click="$emit('join')">
+              Buscar nova partida
+            </button>
+            <button
+              type="button"
+              class="opponent-button opponent-button--ghost"
+              @click="$emit('acknowledge-opponent')"
+            >
+              Voltar ao lobby
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <section
+      class="lobby-grid"
+      :class="{ 'lobby-grid--blur': ['queue', 'opponent-left'].includes(state.status) }"
+    >
       <article class="info-tile">
         <header>
           <span class="info-avatar">ST</span>
@@ -81,6 +144,7 @@ defineProps<{
 defineEmits<{
   (e: 'join'): void;
   (e: 'cancel'): void;
+  (e: 'acknowledge-opponent'): void;
 }>();
 </script>
 
@@ -264,11 +328,263 @@ defineEmits<{
   box-shadow: none;
 }
 
+.queue-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  backdrop-filter: blur(12px);
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.queue-panel {
+  width: min(100%, 460px);
+  border-radius: 28px;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.96);
+  padding: 2.4rem 2rem;
+  display: grid;
+  gap: 1.25rem;
+  text-align: center;
+  box-shadow: 0 32px 70px rgba(15, 23, 42, 0.25);
+  position: relative;
+}
+
+.queue-spinner {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 auto;
+}
+
+.queue-spinner__dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #58cc02, #2ea024);
+  animation: queue-bounce 1.2s ease-in-out infinite;
+}
+
+.queue-spinner__dot--two {
+  animation-delay: 0.2s;
+}
+
+.queue-spinner__dot--three {
+  animation-delay: 0.4s;
+}
+
+.queue-eyebrow {
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.queue-panel h2 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.queue-note {
+  font-size: 0.95rem;
+  color: #475569;
+}
+
+.queue-note strong {
+  color: #0f4c81;
+}
+
+.queue-tips {
+  text-align: left;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(241, 245, 249, 0.85);
+  padding: 1rem 1.3rem;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.queue-tips ul {
+  margin: 0.75rem 0 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.5rem;
+  list-style: disc;
+}
+
+.queue-cancel {
+  justify-self: center;
+  padding: 0.75rem 2.4rem;
+  border-radius: 9999px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: #f43f5e;
+  box-shadow: 0 18px 36px rgba(244, 63, 94, 0.25);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.queue-cancel:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 48px rgba(244, 63, 94, 0.28);
+}
+
+.lobby-card--dim {
+  filter: blur(4px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.opponent-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  backdrop-filter: blur(10px);
+  background: rgba(241, 245, 249, 0.75);
+}
+
+.opponent-panel {
+  width: min(100%, 500px);
+  border-radius: 30px;
+  border: 2px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.97);
+  padding: 2.6rem 2.2rem;
+  display: grid;
+  gap: 1.4rem;
+  text-align: center;
+  color: #0f172a;
+  box-shadow: 0 30px 70px rgba(148, 163, 184, 0.35);
+  position: relative;
+}
+
+.opponent-icon {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  margin: 0 auto;
+}
+
+.opponent-icon__wave {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 2px solid rgba(59, 130, 246, 0.25);
+  animation: opponent-ripple 2.6s ease-out infinite;
+}
+
+.opponent-icon__wave--delay {
+  animation-delay: 1.3s;
+}
+
+.opponent-icon__avatar {
+  position: absolute;
+  inset: 14px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #60a5fa, #2563eb);
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 12px 30px rgba(96, 165, 250, 0.4);
+}
+
+.opponent-eyebrow {
+  font-size: 0.7rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.opponent-panel h2 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.opponent-note {
+  font-size: 0.95rem;
+  color: #475569;
+}
+
+.opponent-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  justify-content: center;
+}
+
+@media (min-width: 640px) {
+  .opponent-actions {
+    flex-direction: row;
+  }
+}
+
+.opponent-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border-radius: 9999px;
+  padding: 0.85rem 2.4rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.opponent-button--primary {
+  background: linear-gradient(135deg, #22c55e, #15803d);
+  color: #ffffff;
+  box-shadow: 0 18px 40px rgba(34, 197, 94, 0.35);
+}
+
+.opponent-button--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 26px 55px rgba(34, 197, 94, 0.42);
+}
+
+.opponent-button--ghost {
+  background: rgba(148, 163, 184, 0.12);
+  color: #1f2937;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  box-shadow: 0 12px 30px rgba(148, 163, 184, 0.25);
+}
+
+.opponent-button--ghost:hover {
+  transform: translateY(-2px);
+}
+
 .lobby-grid {
   display: grid;
   gap: 1.5rem;
   width: min(100%, 980px);
   z-index: 1;
+}
+ 
+.lobby-grid--blur {
+  filter: blur(8px);
+  pointer-events: none;
+  user-select: none;
 }
 
 @media (min-width: 768px) {
@@ -336,5 +652,53 @@ defineEmits<{
 
 .info-tile ol {
   list-style: decimal;
+}
+
+.queue-enter-active,
+.queue-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.queue-enter-from,
+.queue-leave-to {
+  opacity: 0;
+  transform: scale(0.97);
+}
+
+.opponent-enter-active,
+.opponent-leave-active {
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+
+.opponent-enter-from,
+.opponent-leave-to {
+  opacity: 0;
+  transform: scale(0.97);
+}
+
+@keyframes queue-bounce {
+  0%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  40% {
+    transform: translateY(-12px);
+    opacity: 1;
+  }
+}
+
+@keyframes opponent-ripple {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.6;
+  }
+  70% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
 }
 </style>

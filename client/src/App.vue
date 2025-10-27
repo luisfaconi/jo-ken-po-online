@@ -12,6 +12,7 @@
         :can-cancel="canCancel"
         @join="handleJoin"
         @cancel="cancelQueue"
+        @acknowledge-opponent="resetAfterOpponentLeft"
       />
       <GameView
         v-else
