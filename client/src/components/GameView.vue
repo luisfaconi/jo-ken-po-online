@@ -21,47 +21,6 @@
       </div>
     </header>
 
-    <section class="arena__meta">
-      <div class="meta-card">
-        <p class="meta-eyebrow">{{ t('game.format') }}</p>
-        <h2>{{ t('common.bestOf', { count: bestOfRounds }) }}</h2>
-        <p>{{ t('common.pointsToWin', { count: state.pointsToWin }) }}</p>
-        <div class="meta-progress">
-          <div
-            v-for="index in bestOfRounds"
-            :key="index"
-            class="meta-progress__dot"
-            :class="progressClass(index)"
-          />
-        </div>
-        <div class="meta-status">
-          <span class="meta-status__label">{{ t('game.status') }}</span>
-          <span class="meta-status__value">{{ statusText }}</span>
-        </div>
-        <p class="meta-note">{{ infoText }}</p>
-      </div>
-
-      <div class="meta-card" :class="resultHighlightClass">
-        <p class="meta-eyebrow">{{ t('game.round') }}</p>
-        <template v-if="state.lastRound">
-          <p v-html="lastRoundDescription"></p>
-          <p class="meta-result" :class="roundResultClass(state.lastRound.result)">
-            {{ roundResultLabel(state.lastRound.result) }} - {{ t('common.round', { round: state.lastRound.round }) }}
-          </p>
-        </template>
-        <p v-else>{{ t('game.waitingFirstRound') }}</p>
-      </div>
-
-      <div class="meta-card">
-        <p class="meta-eyebrow">{{ t('game.roomInfoTitle') }}</p>
-        <ul>
-          <li>{{ t('game.roomId', { id: state.roomId ?? t('common.awaiting') }) }}</li>
-          <li>{{ t('game.opponent', { label: opponentLabel }) }}</li>
-          <li>{{ t('game.fastNote') }}</li>
-        </ul>
-      </div>
-    </section>
-
     <section class="arena__actions">
       <p class="actions-eyebrow">{{ t('choices.prompt') }}</p>
       <div class="actions-grid">
@@ -85,6 +44,53 @@
       <p v-if="state.pendingChoice" class="actions-hint">
         {{ t('choices.pending', { choice: translateChoiceLabel(state.pendingChoice) }) }}
       </p>
+    </section>
+
+    <section class="arena__meta">
+      <div class="meta-card meta-card--primary" :class="resultHighlightClass">
+        <div class="meta-primary__header">
+          <p class="meta-eyebrow">{{ t('game.format') }}</p>
+          <h2>{{ t('common.bestOf', { count: bestOfRounds }) }}</h2>
+          <p class="meta-subtitle">{{ t('common.pointsToWin', { count: state.pointsToWin }) }}</p>
+        </div>
+
+        <div class="meta-primary__round">
+          <span class="meta-round-label">
+            {{ t('game.currentRound', { current: currentRoundNumber, total: bestOfRounds }) }}
+          </span>
+          <div class="meta-progress">
+            <div
+              v-for="index in bestOfRounds"
+              :key="index"
+              class="meta-progress__dot"
+              :class="progressClass(index)"
+            />
+          </div>
+        </div>
+
+        <div class="meta-status">
+          <span class="meta-status__label">{{ t('game.status') }}</span>
+          <span class="meta-status__value">{{ statusText }}</span>
+        </div>
+        <p class="meta-note">{{ infoText }}</p>
+
+        <div v-if="state.lastRound" class="meta-last">
+          <p class="meta-last__summary" v-html="lastRoundDescription"></p>
+          <p class="meta-result" :class="roundResultClass(state.lastRound.result)">
+            {{ roundResultLabel(state.lastRound.result) }} - {{ t('common.round', { round: state.lastRound.round }) }}
+          </p>
+        </div>
+        <p v-else class="meta-last__waiting">{{ t('game.waitingFirstRound') }}</p>
+      </div>
+
+      <div class="meta-card meta-card--secondary">
+        <p class="meta-eyebrow">{{ t('game.roomInfoTitle') }}</p>
+        <ul>
+          <li>{{ t('game.roomId', { id: state.roomId ?? t('common.awaiting') }) }}</li>
+          <li>{{ t('game.opponent', { label: opponentLabel }) }}</li>
+          <li>{{ t('game.fastNote') }}</li>
+        </ul>
+      </div>
     </section>
   </div>
 </template>
@@ -125,6 +131,17 @@ const scoreboardLabels = computed(() => ({
   you: t('roundSummary.scoreboard.you'),
   opponent: t('roundSummary.scoreboard.opponent')
 }));
+
+const currentRoundNumber = computed(() => {
+  const lastRoundNumber = props.state.lastRound?.round ?? 0;
+  if (props.state.status === 'completed') {
+    return lastRoundNumber || props.bestOfRounds;
+  }
+  if (lastRoundNumber === 0) {
+    return 1;
+  }
+  return Math.min(lastRoundNumber + 1, props.bestOfRounds);
+});
 
 const lastRoundDescription = computed(() => {
   if (!props.state.lastRound) {
@@ -319,34 +336,129 @@ function choiceIcon(choice: ChoiceKey) {
   color: #1d4ed8;
 }
 
-.arena__meta {
+.arena__actions {
+  margin: 1rem auto 2.5rem;
+  padding: 2.4rem 2rem 2.8rem;
+  border-radius: 28px;
+  background: linear-gradient(150deg, rgba(56, 189, 248, 0.16), rgba(37, 99, 235, 0.14));
+  border: 2px solid rgba(191, 219, 254, 0.6);
+  box-shadow: 0 32px 60px rgba(37, 99, 235, 0.18);
+  max-width: 960px;
   display: grid;
   gap: 1.5rem;
 }
 
+.actions-eyebrow {
+  font-size: 0.85rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: #1d4ed8;
+  font-weight: 700;
+  text-align: center;
+}
+
+.actions-grid {
+  display: grid;
+  gap: 1.2rem;
+}
+
+@media (min-width: 640px) {
+  .actions-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.actions-choice__button {
+  display: grid;
+  justify-items: center;
+  gap: 0.45rem;
+  padding: 1.8rem 1.4rem;
+  border-radius: 22px;
+  border: 2px solid rgba(191, 219, 254, 0.75);
+  background: rgba(255, 255, 255, 0.94);
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 18px 40px rgba(37, 99, 235, 0.2);
+}
+
+.actions-choice__button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.actions-choice__button .choice-icon {
+  font-size: 2.4rem;
+  font-weight: 800;
+}
+
+.actions-choice__button:hover:not(:disabled) {
+  transform: translateY(-4px);
+  box-shadow: 0 28px 55px rgba(37, 99, 235, 0.28);
+  border-color: rgba(37, 99, 235, 0.45);
+}
+
+.actions-choice__button--selected {
+  border-color: rgba(34, 197, 94, 0.85);
+  box-shadow: 0 26px 52px rgba(34, 197, 94, 0.28);
+}
+
+.actions-choice__button--ready {
+  border-color: rgba(37, 99, 235, 0.45);
+  animation: gentlePulse 1.8s ease-in-out infinite;
+}
+
+.actions-hint {
+  font-size: 1rem;
+  color: #1d4ed8;
+  text-align: center;
+  margin-top: 1.6rem;
+}
+
+.arena__meta {
+  display: grid;
+  gap: 1.5rem;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
 @media (min-width: 1024px) {
   .arena__meta {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 2fr 1fr;
   }
 }
 
 .meta-card {
   border-radius: 24px;
-  border: 2px solid rgba(226, 232, 240, 0.9);
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 24px 55px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
   padding: 1.75rem;
   display: grid;
-  gap: 1rem;
+  gap: 1.1rem;
+}
+
+.meta-card--primary {
+  position: relative;
+  overflow: hidden;
+}
+
+.meta-card--secondary {
+  align-self: stretch;
 }
 
 .meta-card h2 {
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #12263a;
 }
 
-.meta-card p, .meta-card li {
+.meta-card p,
+.meta-card li {
   color: #475569;
   font-size: 0.95rem;
 }
@@ -359,49 +471,66 @@ function choiceIcon(choice: ChoiceKey) {
 }
 
 .meta-eyebrow {
-  font-size: 0.7rem;
-  letter-spacing: 0.3em;
+  font-size: 0.65rem;
+  letter-spacing: 0.32em;
   text-transform: uppercase;
   color: #94a3b8;
   font-weight: 600;
 }
 
+.meta-subtitle {
+  font-size: 0.95rem;
+  color: #4b5563;
+}
+
+.meta-primary__round {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.meta-round-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #2563eb;
+}
+
 .meta-progress {
   display: flex;
-  gap: 0.6rem;
+  gap: 0.55rem;
 }
 
 .meta-progress__dot {
   flex: 1;
-  height: 10px;
+  height: 9px;
   border-radius: 9999px;
   background: rgba(226, 232, 240, 0.9);
 }
 
 .meta-progress__dot--you {
-  background: rgba(16, 185, 129, 0.8);
+  background: rgba(16, 185, 129, 0.85);
 }
 
 .meta-progress__dot--opponent {
-  background: rgba(248, 113, 113, 0.8);
+  background: rgba(248, 113, 113, 0.85);
 }
 
 .meta-status {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.8rem 1rem;
+  padding: 0.85rem 1rem;
   border-radius: 14px;
-  background: rgba(56, 189, 248, 0.1);
-  border: 1px solid rgba(56, 189, 248, 0.18);
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.22);
   margin-top: 0.3rem;
 }
 
 .meta-status__label {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
   text-transform: uppercase;
-  letter-spacing: 0.24em;
-  font-weight: 600;
   color: #0f4c81;
 }
 
@@ -413,6 +542,19 @@ function choiceIcon(choice: ChoiceKey) {
 .meta-note {
   font-size: 0.9rem;
   color: #475569;
+}
+
+.meta-last {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.meta-last__summary {
+  color: #1e293b;
+}
+
+.meta-last__waiting {
+  color: #64748b;
 }
 
 .meta-result {
@@ -440,69 +582,10 @@ function choiceIcon(choice: ChoiceKey) {
   color: #d97706;
 }
 
-.arena__actions {
-  border-radius: 24px;
-  border: 2px solid rgba(226, 232, 240, 0.9);
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 24px 55px rgba(15, 23, 42, 0.08);
-  padding: 1.75rem;
-  display: grid;
-  gap: 1.25rem;
-}
-
-.actions-eyebrow {
-  font-size: 0.7rem;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: #94a3b8;
-  font-weight: 600;
-}
-
-.actions-grid {
-  display: grid;
-  gap: 1rem;
-}
-
-@media (min-width: 640px) {
-  .actions-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.actions-choice__button {
-  display: grid;
-  justify-items: center;
-  gap: 0.35rem;
-  padding: 1.35rem 1rem;
-  border-radius: 20px;
-  border: 1px solid rgba(203, 213, 225, 0.9);
-  background: rgba(248, 250, 252, 0.92);
-  font-weight: 700;
-  font-size: 1rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border 0.2s ease;
-  cursor: pointer;
-}
-
-.actions-choice__button--ready {
-  animation: gentlePulse 1.8s ease-in-out infinite;
-}
-
-.actions-choice__button--selected {
-  border-color: rgba(37, 99, 235, 0.6);
-  box-shadow: 0 20px 40px rgba(37, 99, 235, 0.25);
-  transform: translateY(-3px);
-}
-
-.actions-choice__button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  animation: none;
-}
-
 .choice-icon {
-  font-size: 1.8rem;
-  font-family: 'Baloo 2', sans-serif;
-  color: #0f172a;
+  font-size: 2.8rem;
+  line-height: 1;
+  color: #1d4ed8;
 }
 
 .choice-label {
@@ -533,12 +616,6 @@ function choiceIcon(choice: ChoiceKey) {
 .pointer-leave-to {
   opacity: 0;
   transform: translateY(-10px);
-}
-
-.actions-hint {
-  font-size: 0.9rem;
-  color: #2563eb;
-  text-align: center;
 }
 
 @keyframes pulseDot {

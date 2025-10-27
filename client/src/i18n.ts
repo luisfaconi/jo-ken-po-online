@@ -112,7 +112,8 @@ const messages: Record<LocaleCode, Messages> = {
         win: 'You won the round',
         lose: 'You lost the round',
         draw: 'Draw'
-      }
+      },
+      currentRound: 'Current round: {current} / {total}'
     },
     roundSummary: {
       youPlayed: 'You played <strong>{you}</strong> and the opponent <strong>{opponent}</strong>.',
@@ -269,7 +270,8 @@ const messages: Record<LocaleCode, Messages> = {
         win: 'Voce venceu a rodada',
         lose: 'Voce perdeu a rodada',
         draw: 'Empate'
-      }
+      },
+      currentRound: 'Rodada atual: {current} / {total}'
     },
     roundSummary: {
       youPlayed: 'Voce jogou <strong>{you}</strong> e o oponente <strong>{opponent}</strong>.',
@@ -426,7 +428,8 @@ const messages: Record<LocaleCode, Messages> = {
         win: 'Ganaste la ronda',
         lose: 'Perdiste la ronda',
         draw: 'Empate'
-      }
+      },
+      currentRound: 'Ronda actual: {current} / {total}'
     },
     roundSummary: {
       youPlayed: 'Jugaste <strong>{you}</strong> y el oponente <strong>{opponent}</strong>.',
