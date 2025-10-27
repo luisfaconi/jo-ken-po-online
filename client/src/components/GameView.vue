@@ -2,20 +2,20 @@
   <div class="arena">
     <header class="arena__hero">
       <div class="arena__room">
-        <span class="room-pill">Sala #{{ roomCode }}</span>
+        <span class="room-pill">{{ t('game.room', { code: roomCode }) }}</span>
         <span class="room-presence">
-          {{ state.roomsOnline }} sala{{ state.roomsOnline === 1 ? '' : 's' }} em jogo agora
+          {{ roomsOnlineText }}
         </span>
       </div>
 
       <div class="arena__score" :class="scoreGlowClass">
         <div class="score-side">
-          <span class="score-label">Voce</span>
+          <span class="score-label">{{ scoreboardLabels.you }}</span>
           <span class="score-value">{{ state.score.you }}</span>
         </div>
-        <div class="score-divider">vs</div>
+        <div class="score-divider">{{ t('common.vs') }}</div>
         <div class="score-side">
-          <span class="score-label">Oponente</span>
+          <span class="score-label">{{ scoreboardLabels.opponent }}</span>
           <span class="score-value">{{ state.score.opponent }}</span>
         </div>
       </div>
@@ -23,9 +23,9 @@
 
     <section class="arena__meta">
       <div class="meta-card">
-        <p class="meta-eyebrow">Formato</p>
-        <h2>Melhor de {{ bestOfRounds }}</h2>
-        <p>Primeiro a {{ state.pointsToWin }} ponto(s) ganha a batalha.</p>
+        <p class="meta-eyebrow">{{ t('game.format') }}</p>
+        <h2>{{ t('common.bestOf', { count: bestOfRounds }) }}</h2>
+        <p>{{ t('common.pointsToWin', { count: state.pointsToWin }) }}</p>
         <div class="meta-progress">
           <div
             v-for="index in bestOfRounds"
@@ -35,38 +35,35 @@
           />
         </div>
         <div class="meta-status">
-          <span class="meta-status__label">Status</span>
+          <span class="meta-status__label">{{ t('game.status') }}</span>
           <span class="meta-status__value">{{ statusText }}</span>
         </div>
         <p class="meta-note">{{ infoText }}</p>
       </div>
 
       <div class="meta-card" :class="resultHighlightClass">
-        <p class="meta-eyebrow">Rodada</p>
+        <p class="meta-eyebrow">{{ t('game.round') }}</p>
         <template v-if="state.lastRound">
-          <p>
-            Voce jogou <strong>{{ translateChoice(state.lastRound.you.choice) }}</strong> e o oponente
-            <strong>{{ translateChoice(state.lastRound.opponent.choice) }}</strong>.
-          </p>
+          <p v-html="lastRoundDescription"></p>
           <p class="meta-result" :class="roundResultClass(state.lastRound.result)">
-            {{ roundResultLabel(state.lastRound.result) }} - Rodada {{ state.lastRound.round }}
+            {{ roundResultLabel(state.lastRound.result) }} - {{ t('common.round', { round: state.lastRound.round }) }}
           </p>
         </template>
-        <p v-else>Aguardando a primeira rodada...</p>
+        <p v-else>{{ t('game.waitingFirstRound') }}</p>
       </div>
 
       <div class="meta-card">
-        <p class="meta-eyebrow">Sala</p>
+        <p class="meta-eyebrow">{{ t('game.roomInfoTitle') }}</p>
         <ul>
-          <li>Identificador: {{ state.roomId ?? 'carregando...' }}</li>
-          <li>Oponente: {{ opponentLabel }}</li>
-          <li>Rodadas curtas, ritmo acelerado.</li>
+          <li>{{ t('game.roomId', { id: state.roomId ?? t('common.awaiting') }) }}</li>
+          <li>{{ t('game.opponent', { label: opponentLabel }) }}</li>
+          <li>{{ t('game.fastNote') }}</li>
         </ul>
       </div>
     </section>
 
     <section class="arena__actions">
-      <p class="actions-eyebrow">Escolha sua jogada</p>
+      <p class="actions-eyebrow">{{ t('choices.prompt') }}</p>
       <div class="actions-grid">
         <button
           v-for="choice in choices"
@@ -82,11 +79,11 @@
         </button>
       </div>
       <transition name="pointer">
-        <div v-if="showPointer" class="pointer-banner">Sua vez!</div>
+        <div v-if="showPointer" class="pointer-banner">{{ t('game.pointer') }}</div>
       </transition>
 
       <p v-if="state.pendingChoice" class="actions-hint">
-        Voce escolheu <strong>{{ translateChoice(state.pendingChoice) }}</strong>. Aguardando o oponente...
+        {{ t('choices.pending', { choice: translateChoiceLabel(state.pendingChoice) }) }}
       </p>
     </section>
   </div>
@@ -95,6 +92,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, onBeforeUnmount } from 'vue';
 import type { ChoiceKey, GameState, RoundSummary } from '../composables/useGame';
+import { useI18n, translateChoiceLabel, translateChoiceShort } from '../i18n';
 
 const props = defineProps<{
   state: GameState;
@@ -110,11 +108,33 @@ defineEmits<{
   (e: 'choice', value: ChoiceKey): void;
 }>();
 
+const { t } = useI18n();
+
 const resultFlash = ref<'win' | 'lose' | 'draw' | null>(null);
 const showPointer = computed(() => props.canPlay && props.state.pendingChoice === null);
 const roomCode = computed(() =>
   props.state.roomId ? props.state.roomId.slice(0, 6).toUpperCase() : '------'
 );
+
+const roomsOnlineText = computed(() => {
+  const suffix = props.state.roomsOnline === 1 ? '' : 's';
+  return t('game.roomsOnline', { count: props.state.roomsOnline, suffix });
+});
+
+const scoreboardLabels = computed(() => ({
+  you: t('roundSummary.scoreboard.you'),
+  opponent: t('roundSummary.scoreboard.opponent')
+}));
+
+const lastRoundDescription = computed(() => {
+  if (!props.state.lastRound) {
+    return '';
+  }
+  return t('roundSummary.youPlayed', {
+    you: translateChoiceLabel(props.state.lastRound.you.choice),
+    opponent: translateChoiceLabel(props.state.lastRound.opponent.choice)
+  });
+});
 
 let flashTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -155,30 +175,16 @@ const resultHighlightClass = computed(() => {
   return `meta-card--${resultFlash.value}`;
 });
 
-function translateChoice(choice?: ChoiceKey | null): string {
-  if (!choice) return '--';
-  switch (choice) {
-    case 'rock':
-      return 'Pedra';
-    case 'paper':
-      return 'Papel';
-    case 'scissors':
-      return 'Tesoura';
-    default:
-      return '--';
-  }
-}
-
 function roundResultLabel(result: RoundSummary['result']): string {
   switch (result) {
     case 'win':
-      return 'Voce venceu a rodada';
+      return t('game.roundResult.win');
     case 'lose':
-      return 'Voce perdeu a rodada';
+      return t('game.roundResult.lose');
     case 'draw':
-      return 'Empate';
+      return t('game.roundResult.draw');
   }
-  return 'Empate';
+  return t('game.roundResult.draw');
 }
 
 function roundResultClass(result: RoundSummary['result']) {
@@ -215,14 +221,7 @@ function choiceClass(choice: ChoiceKey) {
 }
 
 function choiceIcon(choice: ChoiceKey) {
-  switch (choice) {
-    case 'rock':
-      return 'R';
-    case 'paper':
-      return 'P';
-    case 'scissors':
-      return 'S';
-  }
+  return translateChoiceShort(choice);
 }
 </script>
 

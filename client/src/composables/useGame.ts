@@ -1,5 +1,6 @@
 import { io, type Socket } from 'socket.io-client';
 import { reactive, readonly } from 'vue';
+import { translate } from '../i18n';
 
 type GameStatus = 'connecting' | 'idle' | 'queue' | 'matched' | 'opponent-left' | 'disconnected' | 'completed';
 
@@ -156,7 +157,7 @@ function connect() {
   });
 
   socket.on('matchAlreadyRunning', () => {
-    emitError('Voce ja esta em uma partida.');
+    emitError(translate('errors.matchRunning'));
   });
 
   socket.on('roomState', ({ players, pointsToWin }) => {
@@ -192,7 +193,7 @@ function connect() {
   socket.on('choiceReset', ({ reason }) => {
     patchState({ pendingChoice: null });
     if (reason === 'timeout') {
-      setError('Tempo esgotado. Rodada reiniciada.');
+      setError(translate('errors.timeout'));
     } else {
       setError(null);
     }
@@ -233,7 +234,7 @@ function connect() {
 
 function joinQueue() {
   if (!socket?.connected) {
-    setError('Ainda conectando ao servidor.');
+    setError(translate('errors.reconnecting'));
     return;
   }
   socket.emit('joinQueue');
@@ -248,7 +249,7 @@ function cancelQueue() {
 
 function submitChoice(choice: ChoiceKey) {
   if (!socket?.connected) {
-    setError('Conexao com o servidor perdida.');
+    setError(translate('errors.connectionLost'));
     return;
   }
 

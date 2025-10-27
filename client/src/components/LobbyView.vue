@@ -8,20 +8,17 @@
       :class="{ 'lobby-card--dim': ['queue', 'opponent-left'].includes(state.status) }"
     >
       <div class="lobby-card__head">
-        <span class="lobby-badge">Hall principal</span>
-        <h1>Pronto para o proximo duelo?</h1>
-        <p>
-          Entre na fila e deixe o sistema encontrar automaticamente um adversario. Assim que o
-          pareamento ocorrer, voce sera levado para uma sala dedicada.
-        </p>
+        <span class="lobby-badge">{{ t('lobby.hallBadge') }}</span>
+        <h1>{{ t('lobby.headline') }}</h1>
+        <p>{{ t('lobby.description') }}</p>
       </div>
 
       <div class="lobby-card__body">
         <div class="lobby-card__stat">
-          <span class="stat-label">Salas em jogo</span>
+          <span class="stat-label">{{ t('lobby.roomsLabel') }}</span>
           <span class="stat-value">
             {{ state.roomsOnline }}
-            <small>ao vivo</small>
+            <small>{{ t('lobby.live') }}</small>
           </span>
         </div>
         <div class="lobby-card__actions">
@@ -29,7 +26,7 @@
             {{ joinLabel }}
           </button>
           <button class="button button--ghost" :disabled="!canCancel" @click="$emit('cancel')">
-            Cancelar
+            {{ t('common.cancel') }}
           </button>
         </div>
       </div>
@@ -43,21 +40,22 @@
             <span class="queue-spinner__dot queue-spinner__dot--two"></span>
             <span class="queue-spinner__dot queue-spinner__dot--three"></span>
           </div>
-          <p class="queue-eyebrow">Buscando adversario</p>
-          <h2>Aguente firme! Estamos encontrando a melhor mesa.</h2>
+          <p class="queue-eyebrow">{{ t('queueOverlay.searching') }}</p>
+          <h2>{{ t('queueOverlay.headline') }}</h2>
           <p class="queue-note">
-            Jogadores na fila: <strong>{{ state.queueSize }}</strong>. Assim que um oponente aceitar o desafio,
-            voce sera direcionado automaticamente para a arena.
+            {{ t('queueOverlay.players', { count: state.queueSize }) }}
           </p>
           <div class="queue-tips">
-            <p>Enquanto isso:</p>
+            <p>{{ t('queueOverlay.meanwhile') }}</p>
             <ul>
-              <li>Verifique se sua conexao esta estavel.</li>
-              <li>Recapitule rapidamente sua estrategia favorita.</li>
-              <li>Se preferir, cancele e retorne mais tarde.</li>
+              <li>{{ t('queueOverlay.tipConnection') }}</li>
+              <li>{{ t('queueOverlay.tipStrategy') }}</li>
+              <li>{{ t('queueOverlay.tipCancel') }}</li>
             </ul>
           </div>
-          <button type="button" class="queue-cancel" @click="$emit('cancel')">Cancelar busca</button>
+          <button type="button" class="queue-cancel" @click="$emit('cancel')">
+            {{ t('queueOverlay.cancel') }}
+          </button>
         </div>
       </div>
     </transition>
@@ -70,22 +68,21 @@
             <span class="opponent-icon__wave opponent-icon__wave--delay"></span>
             <span class="opponent-icon__avatar">?</span>
           </div>
-          <p class="opponent-eyebrow">Oponente desconectado</p>
-          <h2>Seu adversario saiu da partida.</h2>
+          <p class="opponent-eyebrow">{{ t('opponentOverlay.eyebrow') }}</p>
+          <h2>{{ t('opponentOverlay.headline') }}</h2>
           <p class="opponent-note">
-            A sala foi encerrada para evitar que voce fique preso esperando. Nenhum ponto foi perdido e
-            voce pode voltar para a fila quando quiser.
+            {{ t('opponentOverlay.note') }}
           </p>
           <div class="opponent-actions">
             <button type="button" class="opponent-button opponent-button--primary" @click="$emit('join')">
-              Buscar nova partida
+              {{ t('common.searchNewMatch') }}
             </button>
             <button
               type="button"
               class="opponent-button opponent-button--ghost"
               @click="$emit('acknowledge-opponent')"
             >
-              Voltar ao lobby
+              {{ t('opponentOverlay.back') }}
             </button>
           </div>
         </div>
@@ -98,31 +95,31 @@
     >
       <article class="info-tile">
         <header>
-          <span class="info-avatar">ST</span>
+          <span class="info-avatar">{{ t('lobby.statusAbbrev') }}</span>
           <div>
-            <p class="info-title">Status</p>
+            <p class="info-title">{{ t('lobby.status') }}</p>
             <p class="info-sub">{{ statusText }}</p>
           </div>
         </header>
         <ul>
-          <li>Fila atual: {{ state.queueSize }} jogador{{ state.queueSize === 1 ? '' : 'es' }} aguardando.</li>
-          <li>Aguarde na fila enquanto encontramos outro jogador.</li>
-          <li>Assim que a sala abrir, voce segue direto para a arena.</li>
+          <li>{{ t('lobby.queueList', { count: state.queueSize }) }}</li>
+          <li>{{ t('lobby.queueAdvice') }}</li>
+          <li>{{ t('lobby.queueFollowUp') }}</li>
         </ul>
       </article>
 
       <article class="info-tile">
         <header>
-          <span class="info-avatar info-avatar--blue">HOW</span>
+          <span class="info-avatar info-avatar--blue">{{ t('lobby.howAbbrev') }}</span>
           <div>
-            <p class="info-title">Como funciona</p>
-            <p class="info-sub">Partidas melhor de 5</p>
+            <p class="info-title">{{ t('lobby.howItWorks') }}</p>
+            <p class="info-sub">{{ t('lobby.bestOf') }}</p>
           </div>
         </header>
         <ol>
-          <li>Entre na fila e aguarde o pareamento.</li>
-          <li>Escolha Pedra, Papel ou Tesoura assim que a rodada abrir.</li>
-          <li>Quem fizer 3 pontos primeiro vence a partida.</li>
+          <li>{{ t('lobby.step1') }}</li>
+          <li>{{ t('lobby.step2') }}</li>
+          <li>{{ t('lobby.step3', { points: state.pointsToWin }) }}</li>
         </ol>
       </article>
     </section>
@@ -131,6 +128,7 @@
 
 <script setup lang="ts">
 import type { GameState } from '../composables/useGame';
+import { useI18n } from '../i18n';
 
 defineProps<{
   state: GameState;
@@ -146,6 +144,8 @@ defineEmits<{
   (e: 'cancel'): void;
   (e: 'acknowledge-opponent'): void;
 }>();
+
+const { t } = useI18n();
 </script>
 
 <style scoped>
@@ -190,87 +190,87 @@ defineEmits<{
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 35px 70px rgba(15, 23, 42, 0.12);
   overflow: hidden;
+  padding: 2.6rem 2.4rem;
+  display: grid;
+  gap: 2.25rem;
   z-index: 1;
 }
 
 .lobby-card__head {
-  padding: 3rem 3rem 1.75rem;
   display: grid;
-  gap: 0.8rem;
+  gap: 1rem;
 }
 
 .lobby-card__head h1 {
-  font-size: 2rem;
-  color: #183153;
-  font-weight: 700;
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: #102a43;
 }
 
 .lobby-card__head p {
-  color: #475569;
-  font-size: 1rem;
+  color: #4b5563;
+  max-width: 680px;
+  line-height: 1.6;
 }
 
 .lobby-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 1rem;
+  justify-content: center;
+  padding: 0.45rem 1.4rem;
   border-radius: 9999px;
-  background: rgba(24, 201, 90, 0.18);
-  border: 1px solid rgba(24, 201, 90, 0.35);
-  font-size: 0.75rem;
-  letter-spacing: 0.25em;
+  background: rgba(88, 204, 2, 0.16);
+  border: 1px solid rgba(88, 204, 2, 0.35);
+  font-size: 0.7rem;
+  letter-spacing: 0.26em;
+  font-weight: 700;
   text-transform: uppercase;
-  font-weight: 600;
-  color: #2b7d19;
+  color: #0f4c3a;
 }
 
 .lobby-card__body {
-  padding: 1.75rem 3rem 3rem;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.8rem;
+  align-items: flex-start;
 }
 
 .lobby-card__stat {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-radius: 18px;
-  background: rgba(28, 176, 246, 0.1);
-  border: 1px solid rgba(28, 176, 246, 0.2);
+  align-items: baseline;
+  gap: 1.2rem;
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: #0f4c81;
 }
 
 .stat-label {
-  font-size: 0.75rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
+  font-size: 0.95rem;
   font-weight: 600;
-  color: #1d4ed8;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #64748b;
 }
 
 .stat-value {
-  display: flex;
+  display: inline-flex;
   align-items: baseline;
-  gap: 0.35rem;
-  font-size: 2rem;
-  font-weight: 700;
-  color: #0f172a;
+  gap: 0.6rem;
 }
 
 .stat-value small {
-  font-size: 0.75rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: #2563eb;
+  font-size: 0.9rem;
   font-weight: 600;
+  color: #64748b;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
 }
 
 .lobby-card__actions {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.8rem;
+  width: 100%;
 }
 
 @media (min-width: 768px) {
@@ -395,10 +395,6 @@ defineEmits<{
 .queue-note {
   font-size: 0.95rem;
   color: #475569;
-}
-
-.queue-note strong {
-  color: #0f4c81;
 }
 
 .queue-tips {
@@ -580,7 +576,7 @@ defineEmits<{
   width: min(100%, 980px);
   z-index: 1;
 }
- 
+
 .lobby-grid--blur {
   filter: blur(8px);
   pointer-events: none;
@@ -702,3 +698,4 @@ defineEmits<{
   }
 }
 </style>
+

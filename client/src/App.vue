@@ -1,5 +1,9 @@
 <template>
-  <div class="min-h-screen bg-slate-100 text-slate-800">
+  <div class="app-shell min-h-screen bg-slate-100 text-slate-800">
+    <div class="language-switcher-wrapper">
+      <LanguageSwitcher />
+    </div>
+
     <transition name="fade-slide" mode="out-in">
       <LobbyView
         v-if="!isGameView"
@@ -53,8 +57,10 @@ import LobbyView from './components/LobbyView.vue';
 import GameView from './components/GameView.vue';
 import MatchSummaryModal from './components/MatchSummaryModal.vue';
 import RoundResultModal from './components/RoundResultModal.vue';
+import LanguageSwitcher from './components/LanguageSwitcher.vue';
 import { useGame } from './composables/useGame';
 import type { ChoiceKey } from './composables/useGame';
+import { useI18n, translateChoiceLabel } from './i18n';
 
 const {
   state,
@@ -66,33 +72,19 @@ const {
   resetAfterOpponentLeft
 } = useGame();
 
-const choices: Array<{ value: ChoiceKey; label: string }> = [
-  { value: 'rock', label: 'Pedra' },
-  { value: 'paper', label: 'Papel' },
-  { value: 'scissors', label: 'Tesoura' }
-];
+const { t } = useI18n();
+
+const choices = computed<Array<{ value: ChoiceKey; label: string }>>(() => [
+  { value: 'rock', label: t('common.rock') },
+  { value: 'paper', label: t('common.paper') },
+  { value: 'scissors', label: t('common.scissors') }
+]);
 
 const isGameView = computed(() => state.status === 'matched' || state.status === 'completed');
 
 const statusText = computed((): string => {
-  switch (state.status) {
-    case 'connecting':
-      return 'Conectando ao servidor...';
-    case 'idle':
-      return 'Pronto para entrar na fila.';
-    case 'queue':
-      return 'Procurando adversario...';
-    case 'matched':
-      return 'Partida ativa! Faca sua jogada.';
-    case 'opponent-left':
-      return 'Oponente saiu da partida.';
-    case 'disconnected':
-      return 'Conexao perdida. Tentando recuperar...';
-    case 'completed':
-      return 'Partida concluida!';
-    default:
-      return 'Status desconhecido';
-  }
+  const key = state.status ? `status.${state.status}` : 'status.unknown';
+  return t(key);
 });
 
 const infoText = computed((): string => {
@@ -102,19 +94,19 @@ const infoText = computed((): string => {
 
   switch (state.status) {
     case 'queue':
-      return 'Voce pode cancelar a busca a qualquer momento.';
+      return t('info.queue');
     case 'matched':
       return state.pendingChoice
-        ? `Voce escolheu ${translateChoice(state.pendingChoice)}. Aguardando o oponente...`
-        : 'Selecione Pedra, Papel ou Tesoura para jogar.';
+        ? t('info.matchedPending', { choice: translateChoiceLabel(state.pendingChoice) })
+        : t('info.matchedIdle');
     case 'opponent-left':
-      return 'Seu oponente saiu. Clique em "Buscar nova partida" para voltar a fila.';
+      return t('info.opponentLeft');
     case 'idle':
-      return 'Clique em "Entrar na fila" para desafiar outro jogador.';
+      return t('info.idle');
     case 'completed':
-      return 'Fim de jogo! Parabens pela partida.';
+      return t('info.completed');
     default:
-      return '';
+      return t('info.empty');
   }
 });
 
@@ -123,31 +115,17 @@ const canCancel = computed(() => state.status === 'queue');
 const canPlay = computed(() => state.status === 'matched' && !state.roundModal);
 
 const joinLabel = computed(() =>
-  state.status === 'opponent-left' ? 'Buscar nova partida' : 'Entrar na fila'
+  state.status === 'opponent-left' ? t('common.searchNewMatch') : t('common.enterQueue')
 );
 
 const bestOfRounds = computed(() => state.pointsToWin * 2 - 1);
-const opponentLabel = computed(() => state.opponentId?.slice(0, 6) ?? 'Aguardando...');
+const opponentLabel = computed(() => state.opponentId?.slice(0, 6) ?? t('common.awaiting'));
 
 function handleJoin() {
   if (state.status === 'opponent-left') {
     resetAfterOpponentLeft();
   }
   joinQueue();
-}
-
-function translateChoice(choice?: ChoiceKey | null): string {
-  if (!choice) return '--';
-  switch (choice) {
-    case 'rock':
-      return 'Pedra';
-    case 'paper':
-      return 'Papel';
-    case 'scissors':
-      return 'Tesoura';
-    default:
-      return '--';
-  }
 }
 </script>
 
@@ -171,4 +149,11 @@ function translateChoice(choice?: ChoiceKey | null): string {
   opacity: 0;
 }
 
+.language-switcher-wrapper {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.5rem;
+  z-index: 60;
+}
 </style>
+

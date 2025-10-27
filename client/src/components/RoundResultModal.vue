@@ -1,21 +1,18 @@
 <template>
   <div class="round-modal__backdrop">
     <div class="round-modal__card" :class="cardClass">
-      <span class="round-modal__eyebrow">Rodada {{ summary.round }}</span>
+      <span class="round-modal__eyebrow">{{ t('common.round', { round: summary.round }) }}</span>
       <span class="round-modal__badge">{{ copy.badge }}</span>
       <h2 class="round-modal__title">{{ copy.title }}</h2>
-      <p class="round-modal__matchup">
-        Voce jogou <strong>{{ translateChoice(summary.you.choice) }}</strong> e o oponente
-        <strong>{{ translateChoice(summary.opponent.choice) }}</strong>.
-      </p>
+      <p class="round-modal__matchup" v-html="youPlayedHtml"></p>
       <div class="round-modal__scoreboard">
         <div>
-          <span class="round-modal__score-label">Voce</span>
+          <span class="round-modal__score-label">{{ scoreboardLabels.you }}</span>
           <span class="round-modal__score-value">{{ summary.you.score }}</span>
         </div>
         <div class="round-modal__score-divider">x</div>
         <div>
-          <span class="round-modal__score-label">Oponente</span>
+          <span class="round-modal__score-label">{{ scoreboardLabels.opponent }}</span>
           <span class="round-modal__score-value">{{ summary.opponent.score }}</span>
         </div>
       </div>
@@ -30,6 +27,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { RoundSummary } from '../composables/useGame';
+import { useI18n, translateChoiceLabel } from '../i18n';
 
 const props = defineProps<{
   summary: RoundSummary;
@@ -39,6 +37,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'close'): void;
 }>();
+
+const { t } = useI18n();
 
 const cardClass = computed(() => {
   switch (props.summary.result) {
@@ -53,75 +53,76 @@ const cardClass = computed(() => {
   }
 });
 
+const scoreboardLabels = computed(() => ({
+  you: t('roundSummary.scoreboard.you'),
+  opponent: t('roundSummary.scoreboard.opponent')
+}));
+
+const youPlayedHtml = computed(() =>
+  t('roundSummary.youPlayed', {
+    you: translateChoiceLabel(props.summary.you.choice),
+    opponent: translateChoiceLabel(props.summary.opponent.choice)
+  })
+);
+
 const copy = computed(() => {
   const pointsRemainingForYou = Math.max(props.pointsToWin - props.summary.you.score, 0);
   const pointsRemainingForOpponent = Math.max(props.pointsToWin - props.summary.opponent.score, 0);
 
-  switch (props.summary.result) {
-    case 'win': {
-      const note =
+  if (props.summary.result === 'win') {
+    const note =
+      pointsRemainingForYou === 0
+        ? t('roundSummary.win.noteFinish')
+        : pointsRemainingForYou === 1
+          ? t('roundSummary.win.noteOnePoint')
+          : t('roundSummary.win.noteMany', { count: pointsRemainingForYou });
+
+    return {
+      badge: t('roundSummary.win.badge'),
+      title: t('roundSummary.win.title'),
+      note,
+      action:
         pointsRemainingForYou === 0
-          ? 'Partida encaminhada para o resultado final.'
-          : pointsRemainingForYou === 1
-            ? 'Falta apenas 1 ponto para vencer!'
-            : `Faltam ${pointsLabel(pointsRemainingForYou)} para fechar o jogo.`;
-      return {
-        badge: 'Vitoria na rodada',
-        title: 'Voce venceu esta disputa!',
-        note,
-        action: pointsRemainingForYou === 0 ? 'Ver placar final' : 'Proxima rodada'
-      };
-    }
-    case 'lose': {
-      let note: string;
-      if (pointsRemainingForOpponent === 0) {
-        note = 'O oponente pode decidir a partida na proxima. Reaja rapido!';
-      } else if (pointsRemainingForYou <= 0) {
-        note = 'Voce precisa responder imediatamente para manter a disputa viva.';
-      } else {
-        note = `Ainda da para virar: faltam ${pointsLabel(pointsRemainingForYou)} para alcancar a vitoria.`;
-      }
-      return {
-        badge: 'Rodada perdida',
-        title: 'O ponto ficou com o adversario.',
-        note,
-        action: 'Responder na proxima'
-      };
-    }
-    case 'draw':
-      return {
-        badge: 'Empate',
-        title: 'Rodada equilibrada.',
-        note: 'Tudo em aberto. Ajuste a estrategia e tente novamente.',
-        action: 'Repetir rodada'
-      };
-    default:
-      return {
-        badge: '',
-        title: '',
-        note: '',
-        action: 'Continuar'
-      };
+          ? t('roundSummary.win.actionMatchPoint')
+          : t('roundSummary.win.actionContinue')
+    };
   }
+
+  if (props.summary.result === 'lose') {
+    let note: string;
+
+    if (pointsRemainingForOpponent === 0) {
+      note = t('roundSummary.lose.noteMatchPoint');
+    } else if (pointsRemainingForYou <= 0) {
+      note = t('roundSummary.lose.noteKeepAlive');
+    } else {
+      note = t('roundSummary.lose.noteDefault', { count: pointsRemainingForYou });
+    }
+
+    return {
+      badge: t('roundSummary.lose.badge'),
+      title: t('roundSummary.lose.title'),
+      note,
+      action: t('roundSummary.lose.action')
+    };
+  }
+
+  if (props.summary.result === 'draw') {
+    return {
+      badge: t('roundSummary.draw.badge'),
+      title: t('roundSummary.draw.title'),
+      note: t('roundSummary.draw.note'),
+      action: t('roundSummary.draw.action')
+    };
+  }
+
+  return {
+    badge: '',
+    title: '',
+    note: '',
+    action: t('roundSummary.continue')
+  };
 });
-
-function translateChoice(choice: RoundSummary['you']['choice'] | null | undefined): string {
-  if (!choice) return '--';
-  switch (choice) {
-    case 'rock':
-      return 'Pedra';
-    case 'paper':
-      return 'Papel';
-    case 'scissors':
-      return 'Tesoura';
-    default:
-      return '--';
-  }
-}
-
-function pointsLabel(value: number): string {
-  return value === 1 ? '1 ponto' : `${value} pontos`;
-}
 </script>
 
 <style scoped>

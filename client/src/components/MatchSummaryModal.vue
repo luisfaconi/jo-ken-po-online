@@ -5,21 +5,20 @@
         class="text-sm font-semibold uppercase tracking-[0.4em]"
         :class="summary.you.didWin ? 'text-green-600' : 'text-rose-600'"
       >
-        {{ summary.you.didWin ? 'Vitoria!' : 'Derrota' }}
+        {{ summary.you.didWin ? t('matchSummary.win') : t('matchSummary.lose') }}
       </h2>
       <p class="mt-3 text-sm text-slate-600">
-        Placar final: Voce {{ summary.you.score }} x
-        {{ summary.opponent?.score ?? 0 }} Oponente
+        {{ t('matchSummary.finalScore', { you: summary.you.score, opponent: summary.opponent?.score ?? 0 }) }}
       </p>
       <p class="mt-1 text-xs text-slate-500">
-        Melhor de {{ summary.bestOf }} - retornando ao saguao em instantes...
+        {{ t('matchSummary.bestOf', { count: summary.bestOf }) }}
       </p>
       <button
         type="button"
         class="mt-5 rounded-full bg-blue-500 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-white shadow-lg transition hover:bg-blue-600"
         @click="$emit('close')"
       >
-        Voltar agora
+        {{ t('matchSummary.backNow') }}
       </button>
     </div>
   </div>
@@ -27,6 +26,7 @@
 
 <script setup lang="ts">
 import type { MatchSummary } from '../composables/useGame';
+import { useI18n } from '../i18n';
 
 defineProps<{
   summary: MatchSummary;
@@ -35,6 +35,8 @@ defineProps<{
 defineEmits<{
   (e: 'close'): void;
 }>();
+
+const { t } = useI18n();
 </script>
 
 <style scoped>
@@ -68,4 +70,3 @@ defineEmits<{
   }
 }
 </style>
-
